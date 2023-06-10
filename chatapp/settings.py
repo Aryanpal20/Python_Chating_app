@@ -45,9 +45,16 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'users',
     "corsheaders",
-
-
+    'channels',
+    'djangochannelsrestframework',
 ]
+
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -82,6 +89,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'chatapp.wsgi.application'
 
+ASGI_APPLICATION = 'chatapp.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
