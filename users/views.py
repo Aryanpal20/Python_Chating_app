@@ -1,20 +1,13 @@
 from rest_framework.views import APIView
-from .serializers import UserSerializer, GetUserSerializer, UserChatSerializer
+from rest_framework.generics import ListAPIView
+from .serializers import UserSerializer, GetUserSerializer, ChatMessageSerializer, ChatRoomSerializer
 from rest_framework.response import Response
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework_simplejwt.tokens import RefreshToken  
-from .models import User
+from .models import User, ChatRoom, ChatMessage
 from django.shortcuts import get_object_or_404
-from djangochannelsrestframework.mixins import (
-    ListModelMixin,
-    CreateModelMixin,
-    UpdateModelMixin,
-    DeleteModelMixin,
-)
-from djangochannelsrestframework.generics import GenericAsyncAPIConsumer
-from djangochannelsrestframework.decorators import action
-
-from .models import UserChat
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework import status
 
 # Create your views here.
 
@@ -63,43 +56,44 @@ class LoginAPI(APIView):
 
 class SearchUserView(APIView):
     def get(self, request):
-        user = User.objects.filter(first_name__icontains = request.query_params.get('name'))
-        serializer = GetUserSerializer(user, many=True)
-        return Response (serializer.data)
+        name = request.query_params.get('name')
+        user_id = request.query_params.get('id')
+        queryset = User.objects.all()
 
-class UserChatConsumer(
-    ListModelMixin,
-    CreateModelMixin,
-    UpdateModelMixin,
-    DeleteModelMixin,
-    GenericAsyncAPIConsumer,
-):
-    queryset = UserChat.objects.all()
-    serializer_class = UserChatSerializer
+        if name:
+            queryset = queryset.filter(first_name__icontains=name)
 
-    @action()
-    async def send_chat_message(self, content):
-        print("dsdxdvgbdbvdhvb")
-        sender = self.scope['user']
-        receiver_id = content['receiver_id']
-        message = content['message']
-        print(message, "skjcbscbsb")
+        if user_id:
+            queryset = queryset.filter(id=user_id)
 
-        # Save the chat message to the database
-        user_chat = UserChat.objects.create(sender=sender, receiver_id=receiver_id, content=message)
-        user_chat.save()
+        serializer = GetUserSerializer(queryset, many=True)
+        return Response(serializer.data)
 
-        # Broadcast the chat message to the receiver's WebSocket channel
-        await self.channel_layer.group_send(
-            str(receiver_id),
-            {
-                'type': 'chat_message',
-                'message': message,
-            }
-        )
+    
+    
+class ChatRoomView(APIView):
+	def get(self, request, userId):
+		chatRooms = ChatRoom.objects.filter(member=userId)
+		serializer = ChatRoomSerializer(
+			chatRooms, many=True, context={"request": request}
+		)
+		return Response(serializer.data, status=status.HTTP_200_OK)
 
-    async def chat_message(self, event):
-        # Send the chat message to the WebSocket channel
-        await self.send_json(event)
+	def post(self, request):
+		serializer = ChatRoomSerializer(
+			data=request.data, context={"request": request}
+		)
+		if serializer.is_valid():
+			serializer.save()
+			return Response(serializer.data, status=status.HTTP_200_OK)
+		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class MessagesView(ListAPIView):
+	serializer_class = ChatMessageSerializer
+	pagination_class = LimitOffsetPagination
+
+	def get_queryset(self):
+		roomId = self.kwargs['roomId']
+		return ChatMessage.objects.\
+			filter(chat__roomId=roomId).order_by('-timestamp')
        
