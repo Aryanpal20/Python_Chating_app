@@ -8,132 +8,97 @@ class ChatConsumer(AsyncWebsocketConsumer):
 	def getUser(self, userId):
 		return User.objects.get(id=userId)
 
-	# def getOnlineUsers(self):
-	# 	onlineUsers = OnlineUser.objects.all()
-	# 	return [onlineUser.user.id for onlineUser in onlineUsers]
 
-	# def addOnlineUser(self, user):
-	# 	try:
-	# 		OnlineUser.objects.create(user=user)
-	# 	except:
-	# 		pass
+	def saveMessage(self, message, sender_id, receiver_id,  roomId):
 
-	# def deleteOnlineUser(self, user):
-	# 	try:
-	# 		OnlineUser.objects.get(user=user).delete()
-	# 	except:
-	# 		pass
-
-	def saveMessage(self, message, userId, roomId):
-		userObj = User.objects.get(id=userId)
+		userObj_1 = User.objects.get(id=sender_id)
+		userObj_2 = User.objects.get(id=receiver_id)
 		chatObj = ChatRoom.objects.get(roomId=roomId)
 		chatMessageObj = ChatMessage.objects.create(
-			sender=chatObj, reciever=userObj, message=message
+			sender=userObj_1, receiver=userObj_2, message=message,
+			room_ID=chatObj
 		)
+
+		sender_data = {
+			'id': userObj_1.id,
+			'first_name': userObj_1.first_name,
+			'last_name': userObj_1.last_name
+		}
+
 		return {
 			'action': 'message',
-			'user': userId,
+			'sender': sender_data,
+			'receiver': userObj_2.id,
 			'roomId': roomId,
 			'message': message,
-			'userName': userObj.first_name + " " + userObj.last_name,
+			'userName': userObj_2.first_name + " " + userObj_2.last_name,
 			'timestamp': str(chatMessageObj.timestamp)
 		}
 
-	# async def sendOnlineUserList(self):
-	# 	onlineUserList = await database_sync_to_async(self.getOnlineUsers)()
-	# 	chatMessage = {
-	# 		'type': 'chat_message',
-	# 		'message': {
-	# 			'action': 'onlineUser',
-	# 			'userList': onlineUserList
-	# 		}
-	# 	}
-	# 	await self.channel_layer.group_send('onlineUser', chatMessage)
-
-	# async def connect(self):
-	# 	self.userId = self.scope['url_route']['kwargs']['userId']
-	# 	print(self.userId, "xkdjvndvkj")
-	# 	self.userRooms = await database_sync_to_async(
-	# 		list
-	# 	)(ChatRoom.objects.filter(member=self.userId))
-	# 	for room in self.userRooms:
-	# 		await self.channel_layer.group_add(
-	# 			room.roomId,
-	# 			self.channel_name
-	# 		)
-	# 	# await self.channel_layer.group_add('onlineUser', self.channel_name)
-	# 	self.user = await database_sync_to_async(self.getUser)(self.userId)
-	# 	# await database_sync_to_async(self.addOnlineUser)(self.user)
-	# 	# await self.sendOnlineUserList()
-	# 	await self.accept()
-
-	async def test_connect(self, payload):
-		json_body = json.loads(payload)
-		sender = json_body['sender']
-		reciever = json_body['reciever']
-		self.room_name = uuid.v4()
-
-		_, chat_room = ChatRoom.objects.get_or_create(member_1=sender, member_2 = reciever, roomId=self.room_name)
-
-
 	async def connect(self):
-		# self.room_name = self.scope["url_route"]["kwargs"]
-		# if not self.room_name:
-		# text_data_json = json.loads(text_data)
-		# sender = text_data_json['sender']
-		# reciever = text_data_json['reciever']
-		# self.room_name = uuid.v4()
-		# print(self.room_name)
 		
-		# self.room_group_name = "chat_%s" % self.room_name
-		# print(self.room_group_name)
+		self.member_1 = self.scope['url_route']['kwargs']['member_id_1']
+		self.member_2 = self.scope['url_route']['kwargs']['member_id_2']
+		
+		room = await database_sync_to_async(
+			list
+			)(ChatRoom.objects.filter(member_1=self.member_1, member_2=self.member_2))
+		if room:
+			self.room_name = room[0].roomId
+		else:
+			self.room_name = str(uuid.uuid4())
 
-		# _, chat_room = ChatRoom.objects.get_or_create(roomId=self.room_group_name)
-
-		# Join room group
-		# await self.channel_layer.group_add(chat_room, self.channel_name)
+		await self.channel_layer.group_add(self.room_name ,self.channel_name)
 
 		await self.accept()
 
-		
+
+
 	async def disconnect(self, close_code):
-		print("dn dnmv")
-		# await database_sync_to_async(self.deleteOnlineUser)(self.user)
-		# await self.sendOnlineUserList()
-		# for room in self.userRooms:
-		# 	await self.channel_layer.group_discard(
-		# 		room.roomId,
-		# 		self.channel_name
-		# 	)
+
+		response = "User Disconnected"
+		print(response, 'response')
+        
+		await self.send(response)
+
+
 
 	async def receive(self, text_data):
+		print(text_data, 'text_data')
 		text_data_json = json.loads(text_data)
 		action = text_data_json['action']
-		print("xjhvxhjvvcv")
-		roomId = None
-		print("skvbdsjvdjcv")
-		chatMessage = {}
+		chat_message = {}
+		
 		if action == 'message':
 			message = text_data_json['message']
-			print(message, "xkjnxkjnvv")
-			userId = text_data_json['user']
-			print(userId, "djhbvhjvb")
-			self.userRooms = await database_sync_to_async(
-			list
-			)(ChatRoom.objects.filter(member=self.userId))
-			print(self.userRooms, "sckjb")
-			roomId = self.userRooms[0].roomId
-			print(roomId,"skjcbshcbs")
-			chatMessage = await database_sync_to_async(
-				self.saveMessage
-			)(message, userId, roomId)
+			receiver_id = text_data_json['receiver']
+			
+			member_1 = await database_sync_to_async(User.objects.get)(id=self.member_1)
+			member_2 = await database_sync_to_async(User.objects.get)(id=self.member_2)
+
+			if receiver_id == member_1.id:
+				sender_id = member_2.id
+			elif receiver_id == member_2.id:
+				sender_id = member_1.id
+			else:
+				return self.disconnect()
+			chat_room, _ = await database_sync_to_async(ChatRoom.objects.get_or_create)(
+				member_1=member_1,
+				member_2=member_2,
+				roomId=self.room_name
+			)
+			
+			chat_message = await database_sync_to_async(self.saveMessage)(
+				message, sender_id, receiver_id, chat_room.roomId
+			)
 		elif action == 'typing':
-			chatMessage = text_data_json
+			chat_message = text_data_json
+		
 		await self.channel_layer.group_send(
-			roomId,
+			self.room_name,
 			{
 				'type': 'chat_message',
-				'message': chatMessage
+				'message': chat_message
 			}
 		)
 

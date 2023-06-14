@@ -3,6 +3,5 @@ from .models import User, ChatMessage, ChatRoom
 # Register your models here.
 
 admin.site.register(User)
-# admin.site.register(OnlineUser)
 admin.site.register(ChatRoom)
 admin.site.register(ChatMessage)

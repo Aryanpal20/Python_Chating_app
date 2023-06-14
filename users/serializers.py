@@ -10,10 +10,6 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
-        # chatRoom = ChatRoom.objects.create(
-		# 	type="SELF", name=user.first_name +" "+ user.last_name
-		# )
-        # chatRoom.member.add(user.id)
 	
         return user
 
@@ -22,22 +18,9 @@ class UserSerializer(serializers.ModelSerializer):
 class GetUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ( 'id', 'first_name',)
+        fields = ( 'id', 'first_name', 'last_name', 'email')
+        
 
-
-class ChatRoomSerializer(serializers.ModelSerializer):
-	member = UserSerializer(many=True, read_only=True)
-	members = serializers.ListField(write_only=True)
-
-	def create(self, validatedData):
-		memberObject = validatedData.pop('members')
-		chatRoom = ChatRoom.objects.create(**validatedData)
-		chatRoom.member.set(memberObject)
-		return chatRoom
-
-	class Meta:
-		model = ChatRoom
-		exclude = ['id']
 
 class ChatMessageSerializer(serializers.ModelSerializer):
 	userName = serializers.SerializerMethodField()
@@ -47,5 +30,11 @@ class ChatMessageSerializer(serializers.ModelSerializer):
 		exclude = ['id', 'sender']
 
 	def get_userName(self, Obj):
-		return Obj.reciever.first_name + ' ' + Obj.reciever.last_name
+		return Obj.receiver.first_name + ' ' + Obj.receiver.last_name
 	
+
+class ChatRoomList(serializers.ModelSerializer):
+
+    class Meta:
+        model = ChatRoom
+        fields = ('__all__')

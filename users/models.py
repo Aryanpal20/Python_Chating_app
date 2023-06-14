@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from phonenumber_field.modelfields import PhoneNumberField
 from .managers import CustomUserManager
-from shortuuidfield import ShortUUIDField
+import uuid
 
 # Create your models here.
 
@@ -38,29 +38,23 @@ class User(AbstractUser):
         super().save(*args, **kwargs)
 
 
-# class OnlineUser(models.Model):
-# 	user = models.OneToOneField(User, on_delete=models.CASCADE)
-
-# 	def __str__(self):
-# 		return self.user.username
-
 
 class ChatRoom(models.Model):
-	roomId = ShortUUIDField()
+	roomId = models.CharField(max_length=100, default=uuid.uuid4())
 	type = models.CharField(max_length=10, default='DM')
 	member_1 = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='member_1')
 	member_2 = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='member_2')
 	timestamp = models.DateTimeField(auto_now_add=True)
-	# name = models.CharField(max_length=20, null=True, blank=True)
 
 	def __str__(self):
-		return self.roomId + ' -> ' + str(self.name)
+		return str(self.roomId)
 
 class ChatMessage(models.Model):
-	sender = models.ForeignKey(ChatRoom, on_delete=models.SET_NULL, null=True)
-	reciever = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+	room_ID = models.ForeignKey(ChatRoom, on_delete=models.SET_NULL, null=True)
+	sender = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='sender')
+	receiver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='receiver')
 	message = models.CharField(max_length=255)
 	timestamp = models.DateTimeField(auto_now_add=True)
 
 	def __str__(self):
-		return self.message
+		return str(self.sender.id)
