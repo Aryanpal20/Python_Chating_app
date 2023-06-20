@@ -11,6 +11,9 @@ from .models import User, ChatRoom, ChatMessage
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework import status
 from django.db.models import Q
+from django.contrib.auth import logout
+from rest_framework.permissions import IsAuthenticated
+
 # Create your views here.
 
 
@@ -71,18 +74,24 @@ class LoginAPI(APIView):
             )
 
 
+class LogoutAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args):
+        logout(request)
+        response = Response(status=200)
+        response.success_message = "Logout successfully."
+        return response
+
+
 class SearchUserView(APIView):
     def get(self, request):
         name = request.query_params.get('name')
-        # user_id = request.query_params.get('id')
         queryset = User.objects.all()
 
         if name:
             queryset = queryset.filter(Q(
                 first_name__icontains=name) | Q(last_name__icontains=name))
-
-        # elif user_id:
-        #     queryset = queryset.filter(id=user_id)
 
         else:
             return Response([])
@@ -93,7 +102,6 @@ class SearchUserView(APIView):
 
 class ChatRoomView(APIView):
     def get(self, request, userId):
-        print(userId)
         room = ChatRoom.objects.filter(
             member_1=userId) | ChatRoom.objects.filter(member_2=userId)
 
@@ -115,7 +123,6 @@ class GetRoom(APIView):
     def get(self, request):
         member_1 = User.objects.get(id=request.query_params.get('member_1'))
         member_2 = User.objects.get(id=request.query_params.get('member_2'))
-        # members = [member_1, member_2]
 
         chat_room = ChatRoom.objects.filter(
             Q(member_1=member_1, member_2=member_2) |

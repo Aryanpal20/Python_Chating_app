@@ -1,13 +1,14 @@
 from django.urls import path
 from .views import (
     RegisterAPI, LoginAPI, SearchUserView,
-    ChatRoomView, MessagesView, GetRoom
+    ChatRoomView, MessagesView, GetRoom, LogoutAPI
 )
 
 
 urlpatterns = [
     path("register/", RegisterAPI.as_view(), name="register"),
     path("login/", LoginAPI.as_view(), name='Login'),
+    path("logout/", LogoutAPI.as_view(), name="logout"),
     path('get_user/', SearchUserView.as_view(), name='getuser'),
     path(
         'chats/<str:roomId>/messages',

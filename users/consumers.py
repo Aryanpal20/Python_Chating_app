@@ -68,12 +68,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
 
         response = "User Disconnected"
-        print(response, 'response')
 
         await self.send(response)
 
     async def receive(self, text_data):
-        print(text_data, 'text_data')
         text_data_json = json.loads(text_data)
         action = text_data_json['action']
         chat_message = {}
@@ -86,16 +84,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 User.objects.get)(id=self.member_1)
             member_2 = await database_sync_to_async(
                 User.objects.get)(id=self.member_2)
-            print(member_2, "AKLSJASKJCASKJCN")
-            print(receiver_id, "dbvjhdbvdvh")
             if receiver_id == member_1.id:
-                print(receiver_id, "dbvjhdbvdvh")
                 sender_id = member_2.id
             elif receiver_id == member_2.id:
-                print(receiver_id, "ekjcbdchjbdcbdhcb")
                 sender_id = member_1.id
             else:
-                print("dsxbsvbdcbvdsvbd")
                 return self.disconnect()
 
             chat_message = await database_sync_to_async(self.saveMessage)(
