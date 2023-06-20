@@ -1,6 +1,7 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.utils.translation import gettext as _
 
+
 class CustomUserManager(BaseUserManager):
     """
     Custom user model manager where email is the unique identifier
@@ -26,5 +27,3 @@ class CustomUserManager(BaseUserManager):
         if extra_fields.get('is_superuser') is not True:
             raise ValueError(_('Superuser must have is_superuser=True.'))
         return self.create_user(email, password, **extra_fields)
-    
-    
