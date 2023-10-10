@@ -1,6 +1,6 @@
 # Chat App
 
-![Chat App Screenshot](./image/chatapp.png)
+![chatapp](https://github.com/Aryanpal20/Python_Chating_app/assets/99199495/7f050245-7224-48f7-a16c-c0bd69900906)
 
 
 ## Overview
