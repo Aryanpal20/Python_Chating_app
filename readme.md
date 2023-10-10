@@ -11,9 +11,6 @@ The Chat App is a real-time chat application that enables users to engage in ins
 
 - **Real-time Chat:** Enjoy seamless real-time chat with other users.
 - **User Authentication:** Users can sign up, log in, and have personalized chat experiences.
-- **Multiple Chat Rooms:** Create and join chat rooms for specific topics or groups.
-- **Notifications:** Receive notifications for new messages and chat room activity.
-- **Responsive Design:** The application is responsive and works well on both desktop and mobile devices.
 
 ## Getting Started
 
